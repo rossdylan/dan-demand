@@ -1,0 +1,11 @@
+[slack]
+bot_token = ""
+app_token = ""
+verification_token = "<this is the legacy verification token>"
+
+[twilio]
+account_sid = ""
+token = ""
+to_number = ""
+from_number = "<Put the Dan's # here>"
+rate_limit = "2s"
