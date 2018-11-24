@@ -7,6 +7,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	defaultServerAddress = "127.0.0.1:8080"
+	defaultZPagesAddress = "127.0.0.1:8081"
+	defaultTwilioLimit   = "1s"
+)
+
+type ServerConfig struct {
+	Address       string `toml:"address"`
+	ZPagesAddress string `toml:"zpages_address"`
+}
+
 type SlackConfig struct {
 	BotToken          string `toml:"bot_token"`
 	AppToken          string `toml:"app_token"`
@@ -22,6 +33,7 @@ type TwilioConfig struct {
 }
 
 type DanDemandConfig struct {
+	Server ServerConfig `toml:"server"`
 	Slack  SlackConfig  `toml:"slack"`
 	Twilio TwilioConfig `toml:"twilio"`
 }
@@ -34,11 +46,18 @@ func LoadConfig(path string) (*DanDemandConfig, error) {
 
 	var config DanDemandConfig
 
-	// Default to allowing 1 text per second
-	config.Twilio.Limit = "1s"
-
 	if err := toml.Unmarshal(data, &config); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal config")
+	}
+
+	if config.Server.Address == "" {
+		config.Server.Address = defaultServerAddress
+	}
+	if config.Server.ZPagesAddress == "" {
+		config.Server.ZPagesAddress = defaultZPagesAddress
+	}
+	if config.Twilio.Limit == "" {
+		config.Twilio.Limit = defaultTwilioLimit
 	}
 	return &config, nil
 }

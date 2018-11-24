@@ -50,7 +50,8 @@ func NewMessageTracker(botUID string) (*MessageTracker, error) {
 	}, nil
 }
 
-func (mt *MessageTracker) HandleMessage(ctx context.Context, event *slackevents.MessageEvent) {
+func (mt *MessageTracker) HandleMessage(ctx context.Context, rawEvent interface{}) error {
+	event := rawEvent.(*slackevents.MessageEvent)
 	// NOTE(rossdylan): mim is Multiparty Instant Message aka private group chat
 	if event.Type == "message" && (event.ChannelType == "channel" || event.ChannelType == "mim") {
 		if strings.Contains(event.Text, mt.botUID) {
@@ -62,13 +63,14 @@ func (mt *MessageTracker) HandleMessage(ctx context.Context, event *slackevents.
 			if ok {
 				select {
 				case waiterChan <- struct{}{}:
-					return
+					return nil
 				case <-ctx.Done():
 					mt.removeWaiter(ref)
 				}
 			}
 		}
 	}
+	return nil
 }
 
 func (mt *MessageTracker) GetMessage(channel, timestamp string) (*slackevents.MessageEvent, bool) {

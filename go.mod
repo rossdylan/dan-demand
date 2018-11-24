@@ -5,7 +5,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/gorilla/context v1.1.1 // indirect
-	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.0
@@ -16,6 +15,6 @@ require (
 	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.2.2 // indirect
+	go.opencensus.io v0.18.0
 	golang.org/x/net v0.0.0-20181114220301-adae6a3d119a
-	gopkg.in/yaml.v2 v2.2.1 // indirect
 )

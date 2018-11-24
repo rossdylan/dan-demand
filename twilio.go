@@ -17,7 +17,7 @@ import (
 
 const baseURL = "https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json"
 
-type twilioClient struct {
+type TwilioClient struct {
 	accountSID  string
 	authToken   string
 	toNumber    string
@@ -28,12 +28,12 @@ type twilioClient struct {
 	client  *http.Client
 }
 
-type sendMessageParams struct {
+type SendMessageParams struct {
 	Message  string
 	MediaURL *string
 }
 
-func newTwilioClient(config TwilioConfig) (*twilioClient, error) {
+func NewTwilioClient(config TwilioConfig) (*TwilioClient, error) {
 	limit, err := time.ParseDuration(config.Limit)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse rate_limit duration '%s': ", config.Limit)
@@ -41,7 +41,7 @@ func newTwilioClient(config TwilioConfig) (*twilioClient, error) {
 
 	limiter := NewLimiter(limit)
 
-	return &twilioClient{
+	return &TwilioClient{
 		accountSID:  config.SID,
 		authToken:   config.Token,
 		toNumber:    config.ToNumber,
@@ -52,9 +52,8 @@ func newTwilioClient(config TwilioConfig) (*twilioClient, error) {
 	}, nil
 }
 
-func (tw *twilioClient) SendMessage(ctx context.Context, params sendMessageParams) error {
+func (tw *TwilioClient) SendMessage(ctx context.Context, params SendMessageParams) error {
 	data := url.Values{}
-	//TODO(rossdylan): We can add MMS support via the MediaUrl parameter
 	data.Set("To", tw.toNumber)
 	data.Set("From", tw.fromNumber)
 	data.Set("Body", params.Message)
@@ -88,10 +87,10 @@ func (tw *twilioClient) SendMessage(ctx context.Context, params sendMessageParam
 			if err != nil {
 				return errors.Wrap(err, "twilio request failed and failed to read error body: ")
 			}
-			glog.V(2).Infof("twilio error response: %s", string(data))
+			return errors.New(fmt.Sprintf("twilio error received: %s", string(data)))
 		}
 	} else {
-		glog.V(2).Info("hit the rate limit")
+		return errors.New("rate limit hit")
 	}
 
 	return nil
