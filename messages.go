@@ -51,7 +51,8 @@ func NewMessageTracker(botUID string) (*MessageTracker, error) {
 }
 
 func (mt *MessageTracker) HandleMessage(ctx context.Context, event *slackevents.MessageEvent) {
-	if event.Type == "message" && event.ChannelType == "channel" {
+	// NOTE(rossdylan): mim is Multiparty Instant Message aka private group chat
+	if event.Type == "message" && (event.ChannelType == "channel" || event.ChannelType == "mim") {
 		if strings.Contains(event.Text, mt.botUID) {
 			ref := messageRef{event.Channel, event.TimeStamp}
 			mt.cache.Add(ref, event)

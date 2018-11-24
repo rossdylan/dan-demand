@@ -120,8 +120,8 @@ func (s *server) handleMention(ctx context.Context, event *slackevents.AppMentio
 				context.Background(),
 				"thumbsdown",
 				slack.ItemRef{
-					Channel:   msgData.Channel,
-					Timestamp: msgData.TimeStamp,
+					Channel:   event.Channel,
+					Timestamp: event.TimeStamp,
 				},
 			)
 			if reactErr != nil {
@@ -135,8 +135,8 @@ func (s *server) handleMention(ctx context.Context, event *slackevents.AppMentio
 			context.Background(),
 			"thumbsup",
 			slack.ItemRef{
-				Channel:   msgData.Channel,
-				Timestamp: msgData.TimeStamp,
+				Channel:   event.Channel,
+				Timestamp: event.TimeStamp,
 			},
 		)
 		if reactErr != nil {
