@@ -123,7 +123,13 @@ func (e *Engine) HandleMessage(ctx context.Context, rawEvent interface{}) error 
 			return errors.Wrap(err, "failed to send message: ")
 		}
 	}
-	e.slackWrapper.AddReactionBackground("thumbsup", event.Channel, event.TimeStamp)
+	var emoji string
+	if len(event.Files) > 0 {
+		emoji = "foot"
+	} else {
+		emoji = "thumbsup"
+	}
+	e.slackWrapper.AddReactionBackground(emoji, event.Channel, event.TimeStamp)
 	return nil
 }
 
