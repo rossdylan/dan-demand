@@ -79,7 +79,7 @@ func NewEngine(config *DanDemandConfig) (*Engine, error) {
 func (e *Engine) HandleMessage(ctx context.Context, rawEvent interface{}) error {
 	event := rawEvent.(*slackevents.MessageEvent)
 
-	if !(event.ChannelType == "channel" || event.ChannelType == "mim") {
+	if !(event.ChannelType == "channel" || event.ChannelType == "mim" || event.ChannelType == "group") {
 		return nil
 	}
 	if !strings.Contains(event.Text, e.slackWrapper.BotUID) {
