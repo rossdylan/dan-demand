@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/nlopes/slack/slackevents"
@@ -69,6 +70,9 @@ func (sed *SlackEventDispatcher) handleURLVerification(body []byte) ([]byte, err
 }
 
 func (sed *SlackEventDispatcher) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	ctx, cancel := context.WithDeadline(req.Context(), time.Now().Add(time.Second*2))
+	defer cancel()
+
 	var buf bytes.Buffer
 	buf.ReadFrom(req.Body)
 	apiEvent, err := slackevents.ParseEvent(
@@ -94,7 +98,7 @@ func (sed *SlackEventDispatcher) ServeHTTP(resp http.ResponseWriter, req *http.R
 		inner := apiEvent.InnerEvent
 		if handler, ok := sed.callbackHandlers.Load(inner.Type); ok {
 			handlerErr = errors.Wrapf(
-				handler.(callbackHandlerFunc)(req.Context(), inner.Data),
+				handler.(callbackHandlerFunc)(ctx, inner.Data),
 				"failed to execute CallbackEvent handler for '%s': ",
 				inner.Type,
 			)
@@ -104,7 +108,7 @@ func (sed *SlackEventDispatcher) ServeHTTP(resp http.ResponseWriter, req *http.R
 	default:
 		if handler, ok := sed.eventHandlers.Load(apiEvent.Type); ok {
 			handlerErr = errors.Wrapf(
-				handler.(eventHandlerFunc)(req.Context(), apiEvent),
+				handler.(eventHandlerFunc)(ctx, apiEvent),
 				"failed to execute Event handler for '%s': ",
 				apiEvent.Type,
 			)
