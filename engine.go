@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/nlopes/slack/slackevents"
@@ -19,7 +20,6 @@ type Engine struct {
 
 	slackWrapper *SlackWrapper
 	twilioClient *TwilioClient
-	tracker      *MessageTracker
 }
 
 func NewEngine(config *DanDemandConfig) (*Engine, error) {
@@ -33,11 +33,6 @@ func NewEngine(config *DanDemandConfig) (*Engine, error) {
 	twilioClient, err := NewTwilioClient(config.Twilio)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create TwilioClient: ")
-	}
-
-	tracker, err := NewMessageTracker(slackWrapper.BotUID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create MessageTracker: ")
 	}
 
 	// Configure out mux
@@ -59,21 +54,23 @@ func NewEngine(config *DanDemandConfig) (*Engine, error) {
 		dispatcher:   dispatcher,
 		slackWrapper: slackWrapper,
 		twilioClient: twilioClient,
-		tracker:      tracker,
 	}
 
-	// Forward Message events to the message tracker
-	dispatcher.SetCallbackHandler(slackevents.Message, tracker.HandleMessage)
-
-	// The main entrypoint for dan-demand is the AppMentionEvent so dispatch it to our engine handler
-	// TODO(rossdylan): This is kind of a roundabout way of doing things, maybe just use the MessageEvent
-	dispatcher.SetCallbackHandler(slackevents.AppMention, engine.HandleMention)
+	dispatcher.SetCallbackHandler(slackevents.Message, engine.HandleMessage)
 
 	return engine, nil
 }
 
-func (e *Engine) HandleMention(ctx context.Context, rawEvent interface{}) error {
-	event := rawEvent.(*slackevents.AppMentionEvent)
+func (e *Engine) HandleMessage(ctx context.Context, rawEvent interface{}) error {
+	event := rawEvent.(*slackevents.MessageEvent)
+
+	if !(event.ChannelType == "channel" || event.ChannelType == "mim") {
+		return nil
+	}
+	if !strings.Contains(event.Text, e.slackWrapper.BotUID) {
+		return nil
+	}
+
 	name, err := e.slackWrapper.LookupUserName(ctx, event.User)
 	if err != nil {
 		e.slackWrapper.AddReactionBackground("thumbsdown", event.Channel, event.TimeStamp)
@@ -83,18 +80,15 @@ func (e *Engine) HandleMention(ctx context.Context, rawEvent interface{}) error 
 	params := SendMessageParams{
 		Message: name + ": " + e.slackWrapper.ReplaceUIDs(event.Text),
 	}
-	msgData, ok := e.tracker.WaitForMessage(ctx, event.Channel, event.TimeStamp)
-	if ok {
-		if len(msgData.Files) > 0 {
-			// TODO(rossdylan): See if we can add multiple files
-			if msgData.Files[0].IsPublic {
-				url, err := e.slackWrapper.ShareFilePublic(ctx, &msgData.Files[0])
-				if err != nil {
-					e.slackWrapper.AddReactionBackground("thumbsdown", event.Channel, event.TimeStamp)
-					return errors.Wrap(err, "failed to create mms public link: ")
-				}
-				params.MediaURL = &url
+	if len(event.Files) > 0 {
+		// TODO(rossdylan): See if we can add multiple files
+		if event.Files[0].IsPublic {
+			url, err := e.slackWrapper.ShareFilePublic(ctx, &event.Files[0])
+			if err != nil {
+				e.slackWrapper.AddReactionBackground("thumbsdown", event.Channel, event.TimeStamp)
+				return errors.Wrap(err, "failed to create mms public link: ")
 			}
+			params.MediaURL = &url
 		}
 	}
 
