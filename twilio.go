@@ -31,6 +31,7 @@ type TwilioClient struct {
 type SendMessageParams struct {
 	Message  string
 	MediaURL *string
+	Chunked  bool
 }
 
 func NewTwilioClient(config TwilioConfig) (*TwilioClient, error) {
@@ -68,7 +69,7 @@ func (tw *TwilioClient) SendMessage(ctx context.Context, params SendMessageParam
 	req.SetBasicAuth(tw.accountSID, tw.authToken)
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	if acquired := tw.limiter.Acquire(ctx); acquired {
+	if acquired := tw.limiter.Acquire(ctx); params.Chunked || acquired {
 		resp, err := ctxhttp.Do(ctx, tw.client, req)
 		if err != nil {
 			return errors.Wrap(err, "failed to make twilio request: ")

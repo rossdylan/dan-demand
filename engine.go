@@ -11,6 +11,21 @@ import (
 	"go.opencensus.io/plugin/ochttp"
 )
 
+const twilioMsgLimit = 1600
+
+func chunkString(s string, chunkLen int) []string {
+	var chunks []string
+	for {
+		if len(s) < chunkLen {
+			chunks = append(chunks, s)
+			break
+		}
+		chunks = append(chunks, s[:chunkLen])
+		s = s[chunkLen:]
+	}
+	return chunks
+}
+
 // Engine is the main location for DanDemand application logic. It ties together the API clients,
 // the http server, and the event dispatcher infrastructure
 type Engine struct {
@@ -77,9 +92,7 @@ func (e *Engine) HandleMessage(ctx context.Context, rawEvent interface{}) error 
 		return errors.Wrapf(err, "failed to lookup username for '%s': ", event.User)
 	}
 
-	params := SendMessageParams{
-		Message: name + ": " + e.slackWrapper.ReplaceUIDs(event.Text),
-	}
+	var mediaURL *string
 	if len(event.Files) > 0 {
 		// TODO(rossdylan): See if we can add multiple files
 		if event.Files[0].IsPublic {
@@ -88,13 +101,27 @@ func (e *Engine) HandleMessage(ctx context.Context, rawEvent interface{}) error 
 				e.slackWrapper.AddReactionBackground("thumbsdown", event.Channel, event.TimeStamp)
 				return errors.Wrap(err, "failed to create mms public link: ")
 			}
-			params.MediaURL = &url
+			mediaURL = &url
 		}
 	}
 
-	if err := e.twilioClient.SendMessage(ctx, params); err != nil {
-		e.slackWrapper.AddReactionBackground("thumbsdown", event.Channel, event.TimeStamp)
-		return errors.Wrap(err, "failed to send message: ")
+	baseMessage := name + ": " + e.slackWrapper.ReplaceUIDs(event.Text)
+	for index, chunk := range chunkString(baseMessage, twilioMsgLimit) {
+		params := SendMessageParams{
+			Message: chunk,
+			Chunked: index > 0,
+		}
+
+		// Only attach our media to the first message
+		if mediaURL != nil {
+			params.MediaURL = mediaURL
+			mediaURL = nil
+		}
+
+		if err := e.twilioClient.SendMessage(ctx, params); err != nil {
+			e.slackWrapper.AddReactionBackground("thumbsdown", event.Channel, event.TimeStamp)
+			return errors.Wrap(err, "failed to send message: ")
+		}
 	}
 	e.slackWrapper.AddReactionBackground("thumbsup", event.Channel, event.TimeStamp)
 	return nil
