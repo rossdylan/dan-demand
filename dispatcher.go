@@ -93,11 +93,14 @@ func (sed *SlackEventDispatcher) ServeHTTP(resp http.ResponseWriter, req *http.R
 	case slackevents.CallbackEvent:
 		inner := apiEvent.InnerEvent
 		if handler, ok := sed.callbackHandlers.Load(inner.Type); ok {
-			handlerErr = errors.Wrapf(
+			err = errors.Wrapf(
 				handler.(callbackHandlerFunc)(req.Context(), inner.Data),
 				"failed to execute CallbackEvent handler for '%s': ",
 				inner.Type,
 			)
+			if err != nil {
+				glog.Error(errors.Wrap(err, "failed to dispatch callback: "))
+			}
 		} else {
 			glog.Infof("no callback handler for %#v", inner.Type)
 		}
@@ -115,6 +118,8 @@ func (sed *SlackEventDispatcher) ServeHTTP(resp http.ResponseWriter, req *http.R
 	if handlerErr != nil {
 		glog.Error(errors.Wrap(handlerErr, "failed to dispatch slack events: "))
 		resp.WriteHeader(http.StatusInternalServerError)
+	} else {
+		resp.WriteHeader(http.StatusOK)
 	}
 	if len(body) > 0 {
 		resp.Write(body)

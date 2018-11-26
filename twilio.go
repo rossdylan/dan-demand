@@ -82,7 +82,14 @@ func (tw *TwilioClient) SendMessage(ctx context.Context, params SendMessageParam
 			if err != nil {
 				return errors.Wrap(err, "failed to decode response from twilio: ")
 			}
-			glog.V(2).Infof("twilio response: %#v", respMap)
+			glog.V(2).Infof(
+				"message queued from: %s size: %d mms: %t segments: %s status: %v",
+				strings.Split(params.Message, ":")[0],
+				len(params.Message),
+				params.MediaURL != nil,
+				respMap["num_segments"],
+				respMap["status"],
+			)
 		} else {
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
