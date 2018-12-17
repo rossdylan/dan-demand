@@ -101,15 +101,6 @@ func (e *Engine) HandleMessage(ctx context.Context, rawEvent interface{}) error 
 	if len(event.Files) > 0 {
 		// TODO(rossdylan): See if we can add multiple files
 		if event.Files[0].IsPublic {
-			if event.Files[0].Size > twilioFileSizeLimit {
-				e.slackWrapper.AddReactionBackground("scronch", event.Channel, event.TimeStamp)
-				return errors.Errorf(
-					"mms file '%s' too large %d > %d",
-					event.Files[0].Name,
-					event.Files[0].Size/kb,
-					twilioFileSizeLimit/kb,
-				)
-			}
 			url, err := e.slackWrapper.ShareFilePublic(ctx, &event.Files[0])
 			if err != nil {
 				e.slackWrapper.AddReactionBackground("thumbsdown", event.Channel, event.TimeStamp)

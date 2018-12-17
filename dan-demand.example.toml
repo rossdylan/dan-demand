@@ -2,6 +2,7 @@
 bot_token = ""
 app_token = ""
 verification_token = "<this is the legacy verification token>"
+refresh_interval = "5s"
 
 [twilio]
 account_sid = ""

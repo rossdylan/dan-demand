@@ -22,6 +22,7 @@ type SlackConfig struct {
 	BotToken          string `toml:"bot_token"`
 	AppToken          string `toml:"app_token"`
 	VerificationToken string `toml:"verification_token"`
+	RefreshInterval   string `toml:"refresh_interval"`
 }
 
 type TwilioConfig struct {
