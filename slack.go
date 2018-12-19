@@ -124,7 +124,7 @@ func (sw *SlackWrapper) userRefresher() {
 		// Bail early if we have the same number of users, not the most perfect heurstic, but good
 		// enough since we also lazily load user names.
 		sw.replacerLock.RLock()
-		if len(sw.userMap) == len(users) {
+		if len(sw.userMap) == len(users) || len(users) == 0 {
 			sw.replacerLock.RUnlock()
 			continue
 		}
@@ -145,8 +145,8 @@ func (sw *SlackWrapper) userRefresher() {
 		sw.replacerLock.Lock()
 		sw.userReplacer = newReplacer
 		sw.userMap = newMap
-		glog.Infof("fresh of %d users complete: downloaded in %v, refreshed in %v", len(newMap), requestLatency, refreshLatency)
 		sw.replacerLock.Unlock()
+		glog.Infof("refresh of %d users complete: downloaded in %v, refreshed in %v", len(newMap), requestLatency, refreshLatency)
 	}
 }
 
