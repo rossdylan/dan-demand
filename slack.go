@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -147,6 +148,9 @@ func (sw *SlackWrapper) userRefresher() {
 		sw.userMap = newMap
 		sw.replacerLock.Unlock()
 		glog.Infof("refresh of %d users complete: downloaded in %v, refreshed in %v", len(newMap), requestLatency, refreshLatency)
+		// Explicitly trigger a GC after replacing the map and replacer values so we reclaim that
+		// memory quickly and don't OOM
+		runtime.GC()
 	}
 }
 
