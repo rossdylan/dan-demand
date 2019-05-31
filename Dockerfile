@@ -1,4 +1,4 @@
-from golang:1.11.2-alpine3.8
+from golang:1.12.5-alpine3.9
 workdir /go/src/github.com/rossdylan/dan-demand/
 run apk add bash ca-certificates git gcc g++ libc-dev
 
@@ -18,4 +18,4 @@ run apk --no-cache add ca-certificates
 workdir /root/
 copy --from=0 /go/src/github.com/rossdylan/dan-demand/dan-demand .
 VOLUME ["/config"]
-CMD ["/root/dan-demand", "--alsologtostderr", "--dan-demand.config=/config/dan-demand.toml", "--v=2"]
+CMD ["/root/dan-demand", "--alsologtostderr", "--v=2"]
