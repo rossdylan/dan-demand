@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"net/http/pprof"
 
+	"contrib.go.opencensus.io/exporter/prometheus"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
-	"go.opencensus.io/exporter/prometheus"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/zpages"

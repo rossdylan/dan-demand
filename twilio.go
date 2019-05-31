@@ -34,7 +34,7 @@ type SendMessageParams struct {
 	Chunked  bool
 }
 
-func NewTwilioClient(config TwilioConfig) (*TwilioClient, error) {
+func NewTwilioClient(config *TwilioConfig) (*TwilioClient, error) {
 	limit, err := time.ParseDuration(config.Limit)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse rate_limit duration '%s': ", config.Limit)

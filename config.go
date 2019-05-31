@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
 
 	"github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
@@ -18,11 +19,23 @@ type ServerConfig struct {
 	ZPagesAddress string `toml:"zpages_address"`
 }
 
+func (sec *ServerConfig) InitFromEnv() {
+	sec.Address = os.Getenv("SERVER_ADDR")
+	sec.ZPagesAddress = os.Getenv("ZPAGES_ADDR")
+}
+
 type SlackConfig struct {
 	BotToken          string `toml:"bot_token"`
 	AppToken          string `toml:"app_token"`
 	VerificationToken string `toml:"verification_token"`
 	RefreshInterval   string `toml:"refresh_interval"`
+}
+
+func (slc *SlackConfig) InitFromEnv() {
+	slc.BotToken = os.Getenv("SLACK_BOT_TOKEN")
+	slc.AppToken = os.Getenv("SLACK_APP_TOKEN")
+	slc.VerificationToken = os.Getenv("SLACK_VERIF_TOKEN")
+	slc.RefreshInterval = os.Getenv("SLACK_REFRESH_INTERVAL")
 }
 
 type TwilioConfig struct {
@@ -33,22 +46,44 @@ type TwilioConfig struct {
 	Limit      string `toml:"rate_limit"`
 }
 
+func (tc *TwilioConfig) InitFromEnv() {
+	tc.SID = os.Getenv("TWILIO_SID")
+	tc.Token = os.Getenv("TWILIO_TOKEN")
+	tc.ToNumber = os.Getenv("TWILIO_TO_NUMBER")
+	tc.FromNumber = os.Getenv("TWILIO_FROM_NUMBER")
+	tc.Limit = os.Getenv("TWILIO_LIMIT")
+}
+
 type DanDemandConfig struct {
-	Server ServerConfig `toml:"server"`
-	Slack  SlackConfig  `toml:"slack"`
-	Twilio TwilioConfig `toml:"twilio"`
+	Server *ServerConfig `toml:"server"`
+	Slack  *SlackConfig  `toml:"slack"`
+	Twilio *TwilioConfig `toml:"twilio"`
+}
+
+func (ddc *DanDemandConfig) InitFromEnv() {
+	ddc.Server = &ServerConfig{}
+	ddc.Server.InitFromEnv()
+
+	ddc.Slack = &SlackConfig{}
+	ddc.Slack.InitFromEnv()
+
+	ddc.Twilio = &TwilioConfig{}
+	ddc.Twilio.InitFromEnv()
 }
 
 func LoadConfig(path string) (*DanDemandConfig, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read config file: ")
-	}
+	config := &DanDemandConfig{}
+	config.InitFromEnv()
 
-	var config DanDemandConfig
+	if path != "" {
+		data, err := ioutil.ReadFile(path)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read config file: ")
+		}
 
-	if err := toml.Unmarshal(data, &config); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal config")
+		if err := toml.Unmarshal(data, config); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal config")
+		}
 	}
 
 	if config.Server.Address == "" {
@@ -60,5 +95,5 @@ func LoadConfig(path string) (*DanDemandConfig, error) {
 	if config.Twilio.Limit == "" {
 		config.Twilio.Limit = defaultTwilioLimit
 	}
-	return &config, nil
+	return config, nil
 }

@@ -19,10 +19,6 @@ var (
 func main() {
 	flag.Parse()
 
-	if *flagConfigPath == "" {
-		glog.Fatal("please specify a config file")
-	}
-
 	config, err := LoadConfig(*flagConfigPath)
 	if err != nil {
 		glog.Fatal(errors.Wrap(err, "failed to load config: "))

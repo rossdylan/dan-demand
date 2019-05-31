@@ -43,9 +43,9 @@ type Engine struct {
 }
 
 func NewEngine(config *DanDemandConfig) (*Engine, error) {
-	dispatcher := NewSlackEventDispatcher(config.Slack)
+	dispatcher := NewSlackEventDispatcher(*config.Slack)
 
-	slackWrapper, err := NewSlackWrapper(config.Slack)
+	slackWrapper, err := NewSlackWrapper(*config.Slack)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create SlackWrapper: ")
 	}
