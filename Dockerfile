@@ -18,4 +18,4 @@ run apk --no-cache add ca-certificates
 workdir /root/
 copy --from=0 /go/src/github.com/rossdylan/dan-demand/dan-demand .
 VOLUME ["/config"]
-CMD ["/root/dan-demand", "--alsologtostderr", "--v=2"]
+ENTRYPOINT "/root/dan-demand"
